@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central BNO055 - Telemetria de Lutadores</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">
+    <span class="dot" id="serverDot"></span>
+    <h1>Central BNO055 <span>Telemetria de Lutadores em Tempo Real</span></h1>
+  </div>
+  <div class="stats">
+    <div class="stat"><label>Servidor</label><span id="serverText">conectando...</span></div>
+    <div class="stat"><label>Sensores</label><span id="sensorsOnlineText">0 / 0</span></div>
+    <div class="stat"><label>FPS</label><span id="fpsText">--</span></div>
+  </div>
+</header>
+
+<div id="appLayout">
+
+  <main id="tilesArea">
+    <div id="viewTabs">
+      <button class="viewTab active" data-view="grid">Grade Individual</button>
+      <button class="viewTab" data-view="comparison">Grade Comparativa</button>
+    </div>
+
+    <div id="tilesGrid"><!-- tiles de sensor gerados dinamicamente --></div>
+
+    <div id="comparisonView" hidden>
+       <!-- Espaço 3D único onde os dois avatares aparecem lado a lado -->
+       <div id="unifiedViewportContainer" style="position: relative; height: 380px; border-radius: 12px; overflow: hidden; border: 1px solid var(--panel-border); margin-bottom: 16px; background:                radial-gradient(ellipse at center, #101625 0%, #05070c 100%);">
+       <div id="unifiedViewport" style="width: 100%; height: 100%;"></div>
+       <div id="unifiedLabels" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden;"></div>
+       <span class="hint unifiedHint" style="position: absolute; bottom: 12px; left: 14px; font-size: 12px; color: rgba(255,255,255,0.5);">arraste = girar câmera · scroll = zoom</span>
+       </div>
+
+       <!-- Grelha de gráficos comparativos sobrepostos -->
+       <section id="comparisonChartsSection">
+           <h2 class="chartsTitle" style="font-size: 15px; margin-bottom: 10px; color: var(--text-main);">Gráficos Comparativos em Tempo Real (Ação vs Resposta)</h2>
+           <div id="comparisonChartsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;">
+           <!-- Preenchido dinamicamente pelo JavaScript -->
+           </div>
+       </section>
+     </div>
+  </main>
+
+  <aside id="impactPanel">
+    <div class="navHead">Log de golpes / impactos <small>(todos os sensores)</small></div>
+    <div id="impactLog" class="log"><div class="empty">Nenhum impacto registrado</div></div>
+  </aside>
+
+</div>
+
+<!-- ======================= MODAL: detalhe completo de 1 sensor ======================= -->
+<div id="detailModal" hidden>
+  <div id="detailModalBackdrop"></div>
+  <div id="detailModalCard">
+
+    <div id="detailHead">
+      <h2 id="detailName">—</h2>
+      <span class="badge" id="detailStatus">offline</span>
+      <div class="detailStats">
+        <div class="stat"><label>Taxa</label><span id="rateText">-- Hz</span></div>
+        <div class="stat"><label>Latência</label><span id="latText">-- ms</span></div>
+      </div>
+      <button id="btnCloseModal" class="btn btnClose">Fechar ✕</button>
+    </div>
+
+    <div id="detailLayout">
+
+      <section id="viewportWrap">
+        <div id="viewport3d"></div>
+        <div id="viewportOverlay">
+          <button id="btnResetTraj" class="btn">Resetar trajetória</button>
+          <button id="btnToggleTrail" class="btn">Ocultar rastro</button>
+          <span class="hint">arraste = girar câmera · scroll = zoom</span>
+        </div>
+        <div id="impactFlash"></div>
+      </section>
+
+      <aside id="sidebar">
+
+        <div class="panel">
+          <h2>Orientação</h2>
+          <div class="grid3">
+            <div><label>Yaw</label><span id="valYaw">0.0°</span></div>
+            <div><label>Pitch</label><span id="valPitch">0.0°</span></div>
+            <div><label>Roll</label><span id="valRoll">0.0°</span></div>
+          </div>
+          <div class="grid4 mono">
+            <div><label>qW</label><span id="valQw">0</span></div>
+            <div><label>qX</label><span id="valQx">0</span></div>
+            <div><label>qY</label><span id="valQy">0</span></div>
+            <div><label>qZ</label><span id="valQz">0</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Aceleração</h2>
+          <div class="grid3">
+            <div><label>Acc X</label><span id="valAccX">0</span></div>
+            <div><label>Acc Y</label><span id="valAccY">0</span></div>
+            <div><label>Acc Z</label><span id="valAccZ">0</span></div>
+          </div>
+          <div class="grid3">
+            <div><label>Linear X</label><span id="valLiaX">0</span></div>
+            <div><label>Linear Y</label><span id="valLiaY">0</span></div>
+            <div><label>Linear Z</label><span id="valLiaZ">0</span></div>
+          </div>
+          <div class="rowmag">
+            <label>Magnitude do impacto</label>
+            <span id="valImpactG">0.00 g</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Giroscópio (°/s)</h2>
+          <div class="grid3">
+            <div><label>X</label><span id="valGyrX">0</span></div>
+            <div><label>Y</label><span id="valGyrY">0</span></div>
+            <div><label>Z</label><span id="valGyrZ">0</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Velocidade &amp; Posição <small>(estimado)</small></h2>
+          <div class="grid3">
+            <div><label>Vel X</label><span id="valVelX">0.00</span></div>
+            <div><label>Vel Y</label><span id="valVelY">0.00</span></div>
+            <div><label>Vel Z</label><span id="valVelZ">0.00</span></div>
+          </div>
+          <div class="grid3">
+            <div><label>Pos X</label><span id="valPosX">0.00</span></div>
+            <div><label>Pos Y</label><span id="valPosY">0.00</span></div>
+            <div><label>Pos Z</label><span id="valPosZ">0.00</span></div>
+          </div>
+          <div class="rowmag">
+            <label>Velocidade total</label>
+            <span id="valSpeed">0.00 m/s</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Magnetômetro &amp; Gravidade</h2>
+          <div class="grid3">
+            <div><label>Mag X</label><span id="valMagX">0</span></div>
+            <div><label>Mag Y</label><span id="valMagY">0</span></div>
+            <div><label>Mag Z</label><span id="valMagZ">0</span></div>
+          </div>
+          <div class="grid3">
+            <div><label>Grv X</label><span id="valGrvX">0</span></div>
+            <div><label>Grv Y</label><span id="valGrvY">0</span></div>
+            <div><label>Grv Z</label><span id="valGrvZ">0</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Calibração &amp; Temperatura</h2>
+          <div class="calrow"><label>Sistema</label><div class="bar" id="calSys"><i></i></div></div>
+          <div class="calrow"><label>Giro</label><div class="bar" id="calGyro"><i></i></div></div>
+          <div class="calrow"><label>Acelerômetro</label><div class="bar" id="calAcc"><i></i></div></div>
+          <div class="calrow"><label>Magnetômetro</label><div class="bar" id="calMag"><i></i></div></div>
+          <div class="rowmag"><label>Temperatura</label><span id="valTemp">-- °C</span></div>
+        </div>
+
+      </aside>
+
+    </div>
+
+    <section id="chartsSection">
+      <h2 class="chartsTitle">Gráficos em tempo real</h2>
+      <div id="chartsGrid"><!-- preenchido dinamicamente --></div>
+    </section>
+
+  </div>
+</div>
+
+<script src="/three.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
