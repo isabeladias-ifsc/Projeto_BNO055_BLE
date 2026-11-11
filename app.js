@@ -215,7 +215,7 @@ function buildSensorTile(meta) {
   
   // Chama a função global window.openModal ao clicar no cartão
   root.addEventListener('click', () => {
-    window.openModal(meta.id);
+    window.openModal(entry.meta.id);
   });
 
   const grid = $('tilesGrid');
