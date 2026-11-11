@@ -407,10 +407,10 @@ function animate() {
 animate();
 
 // ============================================================================
-// FUNÇÕES DE INTERAÇÃO (Modal de Detalhes e Grade Comparativa)
+// FUNÇÕES GLOBAIS DE INTERAÇÃO (Modal e Vistas)
 // ============================================================================
 
-// Abre o modal de detalhe ao clicar num card de sensor
+// Declaração global para evitar erros de referência
 function openModal(id) {
   if (!sensors.has(id)) return;
   modalSensorId = id;
@@ -419,11 +419,12 @@ function openModal(id) {
   
   const entry = sensors.get(id);
   if (entry) {
-    $('detailName').textContent = entry.meta.name || entry.meta.id;
+    const nameEl = $('detailName');
+    if (nameEl) nameEl.textContent = entry.meta.name || entry.meta.id;
   }
 }
 
-// Fecha o modal de detalhe
+// Inicializadora de eventos da interface
 document.addEventListener('DOMContentLoaded', () => {
   const btnClose = $('btnCloseModal');
   if (btnClose) {
