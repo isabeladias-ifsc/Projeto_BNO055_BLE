@@ -16,7 +16,7 @@ function $(id) {
 }
 
 // ============================================================================
-// EXPORTAÇÃO GLOBAL DA FUNÇÃO MODAL (Evita ReferenceError)
+// EXPORTAÇÕES GLOBAIS (Evitam ReferenceError e permitem acesso direto)
 // ============================================================================
 window.openModal = function(id) {
   if (!sensors.has(id)) return;
@@ -31,10 +31,7 @@ window.openModal = function(id) {
   }
 };
 
-// ============================================================================
-// CONEXÃO BLUETOOTH (Web Bluetooth)
-// ============================================================================
-async function connectServer() {
+window.connectServer = async function() {
   try {
     $('serverText').textContent = 'a procurar dispositivos...';
     
@@ -60,7 +57,6 @@ async function connectServer() {
     $('serverDot').className = 'dot ok';
     $('serverText').textContent = 'conectado via Bluetooth';
 
-    // Criação inicial dos avatares para Master e Slave
     ensureSensor({ id: 'slave', name: 'Lutador 1 (Escravo)', status: 'online' });
     ensureSensor({ id: 'master', name: 'Lutador 2 (Mestre)', status: 'online' });
     updateGlobalStats();
@@ -70,8 +66,11 @@ async function connectServer() {
     $('serverDot').className = 'dot';
     $('serverText').textContent = 'falha na conexão (clique para tentar)';
   }
-}
+};
 
+// ============================================================================
+// CONEXÃO BLUETOOTH (Funções de Suporte)
+// ============================================================================
 function onDisconnected() {
   $('serverDot').className = 'dot';
   $('serverText').textContent = 'desconectado (clique para religar)';
@@ -93,7 +92,6 @@ function handleBLESideData(event) {
     
     const data = JSON.parse(jsonString);
     
-    // Processa dados do Escravo, se existirem
     if (data.slave) {
       updateSensorData('slave', {
         name: 'Lutador 1 (Escravo)',
@@ -105,7 +103,6 @@ function handleBLESideData(event) {
       });
     }
 
-    // Processa dados do Mestre, se existirem
     if (data.master) {
       updateSensorData('master', {
         name: 'Lutador 2 (Mestre)',
@@ -149,13 +146,11 @@ function updateSensorData(id, payload) {
   if (payload.speed !== undefined)  entry.speedEl.textContent  = Number(payload.speed).toFixed(2) + ' m/s';
   if (payload.lat !== undefined)    entry.latEl.textContent    = payload.lat + ' ms';
 
-  // Atualiza rotação 3D com base no Quatérnion do BNO055
   if (payload.quat) {
     const q = payload.quat;
     entry.sensorGroup.quaternion.set(q.x, q.y, q.z, q.w);
   }
 
-  // Renderiza a cena 3D
   entry.renderer.render(entry.scene, entry.camera);
 }
 
@@ -181,7 +176,6 @@ function lightScene(scene) {
 function createSensorMeshGroup() {
   const group = new THREE.Group();
   
-  // Corpo do boneco / estrutura representativa
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
   const headGeo = new THREE.SphereGeometry(0.2, 16, 16);
   const head = new THREE.Mesh(headGeo, mat);
@@ -213,9 +207,9 @@ function buildSensorTile(meta) {
     </div>
   `;
   
-  // Chama a função global window.openModal ao clicar no cartão
+  // Usa meta.id diretamente, pois o objeto entry ainda está a ser construído
   root.addEventListener('click', () => {
-    window.openModal(entry.meta.id);
+    window.openModal(meta.id);
   });
 
   const grid = $('tilesGrid');
@@ -251,10 +245,17 @@ function buildSensorTile(meta) {
 // INICIALIZAÇÃO DOS EVENTOS DA INTERFACE (DOM)
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Evento para iniciar a conexão ao clicar no cabeçalho/servidor
-  const serverConnEl = $('serverConnection');
-  if (serverConnEl) {
-    serverConnEl.addEventListener('click', connectServer);
+  // Liga o evento de clique ao texto de estado e à barra superior do servidor
+  const serverTextEl = $('serverText');
+  if (serverTextEl) {
+    serverTextEl.style.cursor = 'pointer';
+    serverTextEl.addEventListener('click', () => window.connectServer());
+    
+    const parentContainer = serverTextEl.closest('.server-status') || serverTextEl.parentElement;
+    if (parentContainer) {
+      parentContainer.style.cursor = 'pointer';
+      parentContainer.addEventListener('click', () => window.connectServer());
+    }
   }
 
   // Evento para fechar o modal de detalhes
