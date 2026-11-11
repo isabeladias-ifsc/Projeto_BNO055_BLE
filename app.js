@@ -405,3 +405,46 @@ function animate() {
   });
 }
 animate();
+
+// ============================================================================
+// FUNÇÕES DE INTERAÇÃO (Modal de Detalhes e Grade Comparativa)
+// ============================================================================
+
+// Abre o modal de detalhe ao clicar num card de sensor
+function openModal(id) {
+  if (!sensors.has(id)) return;
+  modalSensorId = id;
+  const modalEl = $('detailModal');
+  if (modalEl) modalEl.hidden = false;
+  
+  const entry = sensors.get(id);
+  if (entry) {
+    $('detailName').textContent = entry.meta.name || entry.meta.id;
+  }
+}
+
+// Fecha o modal de detalhe
+document.addEventListener('DOMContentLoaded', () => {
+  const btnClose = $('btnCloseModal');
+  if (btnClose) {
+    btnClose.addEventListener('click', () => {
+      const modalEl = $('detailModal');
+      if (modalEl) modalEl.hidden = true;
+      modalSensorId = null;
+    });
+  }
+
+  // Alternância entre Grade Individual e Grade Comparativa
+  document.querySelectorAll('.viewTab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.view;
+      document.querySelectorAll('.viewTab').forEach(b => b.classList.toggle('active', b === btn));
+      
+      const tilesGrid = $('tilesGrid');
+      const compView = $('comparisonView');
+      
+      if (tilesGrid) tilesGrid.hidden = (view !== 'grid');
+      if (compView) compView.hidden = (view !== 'comparison');
+    });
+  });
+});
