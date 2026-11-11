@@ -35,8 +35,9 @@ window.connectServer = async function() {
   try {
     $('serverText').textContent = 'a procurar dispositivos...';
     
+    // Procura especificamente pela ESP32 do Judo para evitar falsos positivos
     bluetoothDevice = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
+      filters: [{ name: 'ESP32_Judo_Mestre' }],
       optionalServices: [BLE_SERVICE_UUID]
     });
 
