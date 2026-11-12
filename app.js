@@ -45,14 +45,19 @@ window.connectServer = async function() {
 
     $('serverText').textContent = 'a conectar ao GATT...';
     const server = await bluetoothDevice.gatt.connect();
+    console.log("1. GATT Conectado com sucesso!");
 
     $('serverText').textContent = 'a procurar serviço...';
     const service = await server.getPrimaryService(BLE_SERVICE_UUID);
+    console.log("2. Serviço encontrado!");
 
     $('serverText').textContent = 'a ativar notificações...';
     bluetoothCharacteristic = await service.getCharacteristic(BLE_CHAR_UUID);
+    console.log("3. Caraterística encontrada!");
 
     await bluetoothCharacteristic.startNotifications();
+    console.log("4. Notificações ativadas com sucesso!");
+
     bluetoothCharacteristic.addEventListener('characteristicvaluechanged', handleBLESideData);
 
     $('serverDot').className = 'dot ok';
@@ -153,7 +158,6 @@ function updateSensorData(id, payload) {
   // Atualiza o quatérnio recebido do ESP32 de forma segura
   if (payload.quat) {
     const q = payload.quat;
-    // Atribuição direta ao mesh group do avatar
     entry.sensorGroup.quaternion.set(q.x, q.y, q.z, q.w);
   }
 }
@@ -226,7 +230,6 @@ function buildSensorTile(meta) {
     </div>
   `;
   
-  // Usa meta.id diretamente, pois o objeto entry ainda está a ser construído
   root.addEventListener('click', () => {
     window.openModal(meta.id);
   });
@@ -264,7 +267,6 @@ function buildSensorTile(meta) {
 // INICIALIZAÇÃO DOS EVENTOS DA INTERFACE (DOM)
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Liga o evento de clique ao texto de estado e à barra superior do servidor
   const serverTextEl = $('serverText');
   if (serverTextEl) {
     serverTextEl.style.cursor = 'pointer';
@@ -277,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Evento para fechar o modal de detalhes
   const btnClose = $('btnCloseModal');
   if (btnClose) {
     btnClose.addEventListener('click', () => {
@@ -287,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Alternância de abas (Grade Individual vs Grade Comparativa)
   document.querySelectorAll('.viewTab').forEach((btn) => {
     btn.addEventListener('click', () => {
       const view = btn.dataset.view;
