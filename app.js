@@ -137,6 +137,9 @@ function ensureSensor(meta) {
   return sensors.get(meta.id);
 }
 
+// ============================================================================
+// ATUALIZAÇÃO DOS DADOS E RENDERIZAÇÃO CONTÍNUA 3D
+// ============================================================================
 function updateSensorData(id, payload) {
   const entry = ensureSensor({ id, name: payload.name, status: payload.status });
   
@@ -147,13 +150,28 @@ function updateSensorData(id, payload) {
   if (payload.speed !== undefined)  entry.speedEl.textContent  = Number(payload.speed).toFixed(2) + ' m/s';
   if (payload.lat !== undefined)    entry.latEl.textContent    = payload.lat + ' ms';
 
+  // Atualiza o quatérnio recebido do ESP32 de forma segura
   if (payload.quat) {
     const q = payload.quat;
+    // Atribuição direta ao mesh group do avatar
     entry.sensorGroup.quaternion.set(q.x, q.y, q.z, q.w);
   }
-
-  entry.renderer.render(entry.scene, entry.camera);
 }
+
+// Loop contínuo para garantir que os avatares 3D renderizam fluidamente a 60 FPS
+function animate3D() {
+  requestAnimationFrame(animate3D);
+  sensors.forEach(entry => {
+    if (entry.renderer && entry.scene && entry.camera) {
+      entry.renderer.render(entry.scene, entry.camera);
+    }
+  });
+}
+
+// Inicia o ciclo de animação 3D logo após carregar o script
+document.addEventListener('DOMContentLoaded', () => {
+  animate3D();
+});
 
 function updateGlobalStats() {
   let onlineCount = 0;
